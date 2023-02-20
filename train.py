@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from data_loader import load_data
-from preprocessing import shapify_image, preprocess_image
+from preprocessing import preprocess_image
 from tqdm import tqdm
 from alexnet import AlexNet
 from lenet import LeNet
@@ -44,12 +44,12 @@ def main():
     df = df.sample(frac=1).reset_index(drop=True)
     
     # df split
-    # df_train = df.iloc[:int(df.shape[0]*0.8), :]
-    # df_val = df.iloc[int(df.shape[0]*0.8):, :]
+    df_train = df.iloc[:int(df.shape[0]*0.8), :]
+    df_val = df.iloc[int(df.shape[0]*0.8):, :]
 
     
-    df_train = df.iloc[:int(df.shape[0]*TRAIN_SET_SECTION), :]
-    df_val = df.iloc[int(df.shape[0]*TRAIN_SET_SECTION):int(df.shape[0]*TRAIN_SET_SECTION)+int(df.shape[0]*VAL_SET_SECTION), :]
+    # df_train = df.iloc[:int(df.shape[0]*TRAIN_SET_SECTION), :]
+    # df_val = df.iloc[int(df.shape[0]*TRAIN_SET_SECTION):int(df.shape[0]*TRAIN_SET_SECTION)+int(df.shape[0]*VAL_SET_SECTION), :]
     
     print('Train set:', df_train.shape[0])
     print('Validation set:', df_val.shape[0])
@@ -64,7 +64,6 @@ def main():
     val_data = load_data(df_val) 
 
     # Preprocess data
-    val_data = shapify_image(val_data, img_size=(28, 28))
     val_data = preprocess_image(val_data)
 
     train_crossEntropyLoss = []
@@ -82,7 +81,6 @@ def main():
             train_data = load_data(batches[i]) # (X_train, y_train) not numpy
 
             # Preprocess data
-            train_data = shapify_image(train_data, img_size=(28, 28))
             train_data = preprocess_image(train_data)
 
             loss = model.train(train_data)
@@ -118,11 +116,9 @@ def main():
 
     # plot loss vs epoch
     plt.figure(1)
-    plt.plot(train_crossEntropyLoss)
     plt.plot(val_crossEntropyLoss)
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    plt.legend(['train', 'val'], loc='upper left')
     plt.savefig('loss_vs_epoch.png')
     plt.show()
     plt.close()
@@ -149,8 +145,19 @@ def main():
     # predict
     print(model.predict(np.array([train_data[0][0]])), train_data[1][0])
 
+    #   print model summary
+
+    print('accuracy:', val_accuracy)
+    print('loss:', val_crossEntropyLoss)
+    print('f1:', val_macro_f1)
+
+
     # save model
     model.save()
+
+    # might get error
+    print('Confusion matrix:')
+    print(metrics.confusion_matrix(y_true, y_pred))
 
 
 

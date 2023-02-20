@@ -14,3 +14,8 @@ def load_data(batch):
 
     return train_data
 
+
+def load_test_images(dir_path, filenames):
+    img = [cv2.imread(dir_path + '/' + filename, 0) for filename in filenames]
+    return img
+

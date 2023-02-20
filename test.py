@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from data_loader import load_data
-from preprocessing import shapify_image, preprocess_image
+from data_loader import load_data, load_test_images
+from preprocessing import preprocess_image
 from tqdm import tqdm
 from alexnet import AlexNet
 from lenet import LeNet
@@ -20,17 +20,18 @@ import pickle
 import sys
 
 from env import *
+import os
 
 np.random.seed(SEED)
 
 def main():
 
-    file_path = sys.argv[1:][0]
+    path = sys.argv[1:][0]
 
     # create model
     # model = AlexNet(LEARNING_RATE, INITIALIZER, NUM_CLASSES)
-    # model = LeNet(LEARNING_RATE, INITIALIZER, NUM_CLASSES)
-    model = TestNet(LEARNING_RATE, INITIALIZER, NUM_CLASSES)
+    model = LeNet(LEARNING_RATE, INITIALIZER, NUM_CLASSES)
+    # model = TestNet(LEARNING_RATE, INITIALIZER, NUM_CLASSES)
 
     # load pickle file
     with open(MODEL_FILENAME, 'rb') as f:
@@ -38,31 +39,47 @@ def main():
 
     model.setLayers(trained_model)
 
-    # Load data
+
+#-------------------------------------------------------------------------------------------
+
+
+    # Load data if tested with csv file
     
     # read csv file
-    # df_test = pd.read_csv(TEST_SET_CSV_PATH)
-    df_test = pd.read_csv(file_path)
-
-    print(df_test.head(5))
-    print(df_test.shape)
-    # return
+    df_test = pd.read_csv(path)
 
     # remove unnecessary columns
     df_test.drop(['original filename', 'scanid', 'database name original', 'num'], axis=1, inplace=True)
 
     # split and reduce size
     df_test = df_test.sample(frac=TEST_SET_SECTION, random_state=SEED)
-    print(df_test.shape)
+    filenames = df_test['filename'].values
+    test_data = load_data(df_test)
+
+    # print(df_test.shape)
+#-------------------------------------------------------------------------------------------
+
+# #-------------------------------------------------------------------------------------------
+
+#     # load data if tested with directory path
 
 
-    # prepare test data
-    # load images
-    test_data = load_data(df_test) 
+#     # list directory files
+#     filenames = os.listdir(path)
+#     filenames = filenames[:int(len(filenames)*TEST_SET_SECTION)]
+
+#     # load images
+#     test_data = load_test_images(path, filenames)
+
+#     # dummy test data y values, replace as required for accuracy calculation
+#     test_data = (test_data, np.zeros(len(test_data), dtype=int))
+# #-------------------------------------------------------------------------------------------
 
     # Preprocess data
-    test_data = shapify_image(test_data, img_size=(28, 28))
     test_data = preprocess_image(test_data)
+
+    print('test batch dimension', test_data[0].shape)
+
 
     # predict
     predictions = model.predict(test_data[0]).argmax(axis=1)
@@ -70,7 +87,7 @@ def main():
 
     #write to csv
     df_pred = pd.DataFrame()
-    df_pred['FileName'] = df_test['filename']
+    df_pred['FileName'] = filenames
     df_pred['Digit'] = predictions
     df_pred.to_csv(PREDICTION_FILENAME, index=False)
 
